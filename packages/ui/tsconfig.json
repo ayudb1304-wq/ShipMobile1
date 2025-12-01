@@ -1,0 +1,11 @@
+{
+  "extends": "@shipmobile/config/tsconfig/react-native",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@shipmobile/ui/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

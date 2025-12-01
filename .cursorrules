@@ -1,0 +1,135 @@
+# ShipMobile Universal Monorepo - Cursor Rules
+
+## Project Context
+
+- **Monorepo**: Turborepo with strict workspace isolation
+- **Web**: Next.js 15 (App Router) with React 19 RC. Use `next/navigation` hooks exclusively.
+- **Mobile**: Expo SDK 52 (Managed Workflow). Use `expo-router` for navigation.
+- **Styling**: NativeWind v4 with CSS-first approach. Use `global.css` and `className` prop.
+- **Auth**: Supabase with SSR for Web (`@supabase/ssr`) and SecureStore for Mobile.
+- **Payments**: Razorpay via Native SDK (Config Plugin) for Mobile, script injection for Web.
+- **Navigation**: Solito v4 for cross-platform routing bridge.
+
+## Hard Constraints
+
+### No "use client" in Native
+Never use the `"use client"` directive in files that are imported by React Native.
+Create separate entry points if client-only code is needed:
+- `Component.tsx` → Shared logic (no directive)
+- `Component.web.tsx` → Web-specific with "use client" if needed
+- `Component.native.tsx` → Native-specific implementation
+
+### No Eject
+Never suggest `expo eject`. The project uses Managed Workflow.
+For native code requirements:
+1. Use `npx expo prebuild` to generate native projects
+2. Use Config Plugins in `app.json` for native module configuration
+3. Use EAS Build for production builds
+
+### DaisyUI Compatibility
+Do NOT use DaisyUI component classes (e.g., `.btn`, `.card`, `.modal`).
+They are not compatible with React Native and will break the build.
+✅ DO: Use utility classes mapped to CSS variables: `bg-primary`, `text-secondary`
+❌ DON'T: Use component classes: `btn`, `btn-primary`, `card`
+
+### Import Rules
+Always use absolute package imports from workspace packages:
+✅ `import { Button } from '@shipmobile/ui'`
+✅ `import { useAuth } from '@shipmobile/app/provider/auth'`
+❌ `import { Button } from '../../packages/ui'`
+❌ `import { Button } from '../../../ui/components/Button'`
+
+### Platform-Specific Code
+Use file extensions for platform-specific implementations:
+- `.tsx` → Universal (runs on both platforms)
+- `.web.tsx` → Web only (Next.js)
+- `.native.tsx` → Native only (Expo)
+- `.ios.tsx` → iOS only
+- `.android.tsx` → Android only
+
+## Version Management
+
+### React Version Alignment
+The root `package.json` must include `pnpm.overrides` to enforce React version consistency:
+```json
+{
+  "pnpm": {
+    "overrides": {
+      "react": "19.0.0-rc-66855b96-20241106",
+      "react-dom": "19.0.0-rc-66855b96-20241106",
+      "@types/react": "^18.2.79",
+      "@types/react-dom": "^18.2.25"
+    }
+  }
+}
+```
+
+This prevents "Invalid Hook Call" errors when sharing components between packages.
+
+### Expo SDK 52 Compatibility
+Expo SDK 52 requires specific versions:
+- React Native: 0.76.x
+- React: 18.3.1 (or RC version with overrides)
+- Ensure `expo-router` version matches SDK version
+
+## File Structure Conventions
+
+```
+/
+├── apps/
+│   ├── web/          # Next.js 15 App
+│   │   ├── app/      # App Router pages
+│   │   └── ...
+│   └── native/       # Expo SDK 52 App
+│       ├── app/      # Expo Router pages
+│       └── ...
+├── packages/
+│   ├── ui/           # Shared UI components (NativeWind)
+│   ├── app/          # Shared business logic & screens (Solito)
+│   ├── utils/        # Shared utilities (Supabase client, etc.)
+│   └── config/       # Shared configs (Tailwind, ESLint, TSConfig)
+└── turbo.json        # Turborepo pipeline configuration
+```
+
+## Code Style Guidelines
+
+### TypeScript
+- Strict mode enabled in all packages
+- No `any` types without explicit justification
+- Use type inference where possible, explicit types for function parameters
+- Prefer interfaces for object shapes, types for unions/primitives
+
+### Components
+- Use function components with TypeScript
+- Props interface should be named `{ComponentName}Props`
+- Export components as named exports, not default exports
+- Colocate styles using NativeWind className prop
+
+### Naming Conventions
+- Components: PascalCase (`Button.tsx`, `PayButton.tsx`)
+- Utilities: camelCase (`createClient.ts`, `useAuth.ts`)
+- Constants: SCREAMING_SNAKE_CASE (`API_URL`, `MAX_RETRY_COUNT`)
+- Types/Interfaces: PascalCase (`UserProfile`, `AuthState`)
+
+## Testing Requirements
+
+### Razorpay Testing
+Razorpay requires native code. Testing workflow:
+1. Run `npx expo prebuild` to generate native projects
+2. Run `npx expo run:ios` or `npx expo run:android`
+3. Cannot test in Expo Go (missing native modules)
+
+### Supabase Testing
+- Set environment variables before running:
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- For native: Configure in `app.json` extra field or use `.env` with expo-constants
+
+## Common Gotchas
+
+1. **Metro bundler errors with NativeWind**: Ensure `withNativeWind` wrapper in metro.config.js
+2. **Tailwind classes not working**: Check content paths include all package directories
+3. **React version mismatch**: Verify pnpm.overrides in root package.json
+4. **"use client" errors**: Remove directive from shared component files
+5. **Deep linking not working**: Check scheme configuration in app.json
+6. **Razorpay undefined**: Must use Dev Client, not Expo Go

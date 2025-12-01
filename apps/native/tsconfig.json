@@ -1,0 +1,22 @@
+{
+  "extends": "@shipmobile/config/tsconfig/react-native",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@shipmobile/ui": ["../../packages/ui/src"],
+      "@shipmobile/ui/*": ["../../packages/ui/src/*"],
+      "@shipmobile/app": ["../../packages/app/src"],
+      "@shipmobile/app/*": ["../../packages/app/src/*"],
+      "@shipmobile/utils": ["../../packages/utils/src"],
+      "@shipmobile/utils/*": ["../../packages/utils/src/*"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ],
+  "exclude": ["node_modules"]
+}
